@@ -27,3 +27,27 @@ void AccountList::createAccount(void)
     cout << "------------------------" << endl;
     accountCount++;
 }
+
+Account AccountList::getNewAccount(void)
+{
+	if(this->isEmpty() == false)
+	return (accountList[accountCount - 1]);
+	else
+		throw E("The List of accounts is empty, you cannot access any accounts");
+}
+
+bool AccountList::isEmpty(void)
+{
+	if(accountCount == 0)
+		return true;
+	else
+		return false;
+}
+AccountList* AccountList::getInstance()
+{
+	if(instance == NULL)
+	{
+		instance = new AccountList;
+	}
+	return instance;
+}

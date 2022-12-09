@@ -13,15 +13,15 @@ static void accountWithdraw(Account& o);
 static void accountDeposit(Account& o);
 static int accountLogin(void);
 static void accountLoginMessage(Account& o);
-static Account createAccount(int currentCount);
 
+//Initialize pointer to zero so that it can be initialized in first call to getInstance
+AccountList *AccountList::instance = NULL;   
 int main()
 {
     try
     {
-        Account accountList[NUMBER_OF_ACCOUNTS];
+        AccountList *list = AccountList::getInstance(); 
         Account loggedAccount;
-        static int accountCount = 1;
         string ch;
         showInstructions();
         
@@ -42,15 +42,14 @@ int main()
             }
             else if (ch == "c")
             {
-                accountList[accountCount] = move(createAccount(accountCount)); //RVO should work
-                loggedAccount = move(accountList[accountCount]);
-                accountCount++;
+                list->createAccount();
+                loggedAccount = move(list->getNewAccount());
                 showInstructions();
             }
             else if(ch == "l")
             {   
                 int loginID = accountLogin();
-                loggedAccount = move(accountList[loginID]);
+                loggedAccount = move(list->getAccount(loginID));
                 accountLoginMessage(loggedAccount);
                 showInstructions();
             }
@@ -67,8 +66,6 @@ int main()
     }
     return 0;
 }
-
-
 
 static void showInstructions(void)
 {
@@ -111,30 +108,3 @@ static void accountLoginMessage(Account& o)
     cout << "------------------------" << endl;
 }
 
-static Account createAccount(int currentCount)
-{
-    cout << "I'm creating an account" << endl;
-    cout << "Please, state your name" << endl;
-    string name;
-    cin >> name;
-
-    if(currentCount >= NUMBER_OF_ACCOUNTS)
-    {
-        throw E("Maximum Number of Accounts Reached");
-    }
-    static int flagStart = 0;
-    if (flagStart == 0)
-    {
-        srand((unsigned) time(NULL));
-        flagStart++;
-    }
-
-    int randNumber = rand() % MAX_ACCOUNT_ID;
-
-    Account createdAccount(randNumber, 0.0f, name);
-
-    cout << "Thank you, " << name << ", your account has been set up" << endl;
-    cout << "Your account ID is:" << randNumber << endl;
-    cout << "------------------------" << endl;
-    return createdAccount;
-}

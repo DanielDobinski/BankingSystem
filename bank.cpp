@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <iostream>
-#include <ctime> 
 #include "account.h"
 #include "exceptions.h"
 #include "accountList.h"
@@ -12,15 +11,15 @@ static void showInstructions(void);
 static void accountWithdraw(Account& o);
 static void accountDeposit(Account& o);
 static int accountLogin(void);
-static void accountLoginMessage(Account& o);
+static void accountLoginMessage(Account& o); 
 
 //Initialize pointer to zero so that it can be initialized in first call to getInstance
-AccountList *AccountList::instance = NULL;   
+AccountList * AccountList::instance = NULL;   //put to init Function
 int main()
 {
     try
     {
-        AccountList *list = AccountList::getInstance(); 
+        AccountList *list = AccountList::getInstance();
         Account loggedAccount;
         string ch;
         showInstructions();

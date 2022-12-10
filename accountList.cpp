@@ -1,5 +1,6 @@
 #include "accountList.h"
-
+#include <ctime> 
+#include <algorithm>
 
 void AccountList::createAccount(void)
 {
@@ -12,16 +13,26 @@ void AccountList::createAccount(void)
     {
         throw E("Maximum Number of Accounts Reached");
     }
-    static int flagStart = 0;
-    if (flagStart == 0)
-    {
-        srand((unsigned) time(NULL));
-        flagStart++;
-    }
-    int randNumber = rand() % MAX_ACCOUNT_ID;
 
+    int randNumber = rand() % MAX_ACCOUNT_ID;
     Account createdAccount(randNumber, 0.0f, name);
-    accountList[accountCount] = move(createdAccount); //RVO should work
+    auto result = std::find(accountList, accountList + NUMBER_OF_ACCOUNTS, createdAccount);
+
+    if (result == (accountList + NUMBER_OF_ACCOUNTS)) //if not found, iterator (pointer) points to the end.
+    {
+    	accountList[accountCount] = move(createdAccount); //RVO should work
+    }
+    else
+    {
+        while(result != (accountList + NUMBER_OF_ACCOUNTS)) //try to create a number until it's not present
+        {
+            randNumber = rand() % MAX_ACCOUNT_ID;
+            Account createdAccount(randNumber, 0.0f, name);
+            result = std::find(accountList, accountList + NUMBER_OF_ACCOUNTS, createdAccount);
+        }
+        accountList[accountCount] = move(createdAccount); //RVO should work
+    }
+
     cout << "Thank you, " << name << ", your account has been set up" << endl;
     cout << "Your account ID is:" << randNumber << endl;
     cout << "------------------------" << endl;
@@ -31,7 +42,7 @@ void AccountList::createAccount(void)
 Account AccountList::getNewAccount(void)
 {
 	if(this->isEmpty() == false)
-	return (accountList[accountCount - 1]);
+		return (accountList[accountCount - 1]);
 	else
 		throw E("The List of accounts is empty, you cannot access any accounts");
 }
@@ -49,5 +60,7 @@ AccountList* AccountList::getInstance()
 	{
 		instance = new AccountList;
 	}
+	srand((unsigned) time(NULL)); // could be done in some Init function
 	return instance;
 }
+

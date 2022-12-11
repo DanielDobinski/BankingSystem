@@ -16,7 +16,7 @@ void Account::accountDisplay(void)
 void Account::reset(void)
 {
 	cash = 0;
-	accountID = 0;
+	accountID = -1;
 	name = "";
 }
 

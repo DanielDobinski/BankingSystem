@@ -1,3 +1,19 @@
+/* Short description:
+The banking system is using a fixed array size with following data:
+ID, name, cash for each owner. ID is unique and created randomly.
+You can:
+- log in
+- withdraw
+- deposit
+- see current account
+- see all acounts
+- see accounts' count
+- transfer money
+- create new account
+    accountList is a singletone class which is mainly a list of accounts.
+Created by Daniel Dobinski
+*/ 
+
 #include <cstdio>
 #include <iostream>
 #include "account.h"
@@ -16,76 +32,80 @@ static string getName(void);
 static void createAccounts(AccountList * l);
 
 //Initialize pointer to zero so that it can be initialized in first call to getInstance
-AccountList * AccountList::instance = NULL;   //put to init Function
+AccountList * AccountList::_instance = NULL;   //put to init Function
 int main()
 {
-    try
+    AccountList *list = AccountList::getInstance();
+    createAccounts(list);
+    Account loggedAccount;
+    string input;
+    showInstructions();
+    
+    while(cin >> input)
     {
-        AccountList *list = AccountList::getInstance();
-        createAccounts(list);
-        Account loggedAccount;
-        string ch;
-        showInstructions();
-        
-        while(cin >> ch)
+        try
         {
-            if(ch == "w")
+            if(input == "w")
             {   
                 accountWithdraw(loggedAccount);
             }
-            else if (ch == "d")
+            else if (input == "d")
             {
                 accountDeposit(loggedAccount);
             }
-            else if (ch == "s")
+            else if (input == "s")
             {
-                loggedAccount.accountDisplay();
-                showInstructions();
+                cout << loggedAccount << endl;
             }
-            else if (ch == "c")
+            else if (input == "c")
             {
+
                 list->createAccount();
-                loggedAccount = move(list->getNewAccount());
-                showInstructions();
+                loggedAccount = move(list->getNewAccount()); //RVO shall work
             }
-            else if(ch == "l")
+            else if(input == "l")
             {   
+
                 int loginID = accountLogin();
-                loggedAccount = move(list->getAccount(loginID));
+                if(loggedAccount.getAccountID() != -1)
+                    list->reassignLoggedAccount(loggedAccount);
+                loggedAccount = move(list->getAccount(loginID));     //RVO shall work
                 accountLoginMessage(loggedAccount);
-                showInstructions();
             }
-            else if(ch == "f")
+            else if(input == "f")
             {   
                 string name = getName();
-                try
-                {
+                if(loggedAccount.getAccountID() != -1)
                     list->reassignLoggedAccount(loggedAccount);
-                    loggedAccount = move(list->findAccountID(name));
-                    accountLoginMessage(loggedAccount);
-                }
-                catch (E & e)
-                {
-                    cout << e.what() << endl;
-                }
-                showInstructions(); 
+                loggedAccount = move(list->getAccountbyName(name));  //RVO shall work
+                accountLoginMessage(loggedAccount);
             }
-            else if( ch == "u")
+            else if( input == "u")
             {
                 list->displayAllAccounts();
-                showInstructions(); 
+            }
+            else if( input == "t") 
+            {
+                list->tranfserMoney(gatherTransferInfo());
+            }
+            else if( input == "q") 
+            {
+                cout << "Accounts' count " << list->getAccountCount() << endl;;
             }
             else
             {
                 cout << "invalid input";
             }
+
         }
-    }
-    catch(E & e)
-    {
-        cout << "exception:";
-        cout << e.what() << endl;
-    }
+        catch(E & e)
+        {
+            cout << "exception:";
+            cout << e.what() << endl;
+
+        }
+        showInstructions(); 
+    } //end of while
     return 0;
 }
 
@@ -99,6 +119,8 @@ static void showInstructions(void)
     cout << "press c to create an Account" << endl;
     cout << "press f to find account and login" << endl;
     cout << "press u to display all acounts" << endl;
+    cout << "press t to transfer money" << endl;
+    cout << "press q to show accounts' count" << endl;
     cout << "------------------------" << endl;
 }
 static void accountWithdraw(Account& o)
@@ -106,16 +128,20 @@ static void accountWithdraw(Account& o)
     cout << "Withdraw: how much?" << endl;
     double amount;
     cin >> amount;
-    o.withdraw(amount);
-    showInstructions();
+    if(o.getAccountID() != -1)
+        o.withdraw(amount);
+    else
+        throw E("You need to log in first");
 }
 static void accountDeposit(Account& o)
 {
     cout << "Deposit: how much?" << endl;
     double amount;
     cin >> amount;
-    o.deposit(amount);
-    showInstructions();
+     if(o.getAccountID() != -1)
+        o.deposit(amount);
+    else
+        throw E("You need to log in first");
 }
 
 static int accountLogin(void)

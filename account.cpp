@@ -2,34 +2,29 @@
 #include "exceptions.h"
 using namespace std;
 
-
-void Account::accountDisplay(void)
+ostream& operator<<(ostream& os, const Account& o)
 {
-	cout << "------------------------" << endl;
-	cout << "Your account:" << endl;
-	cout << "ID: " << getAccountID() << "  ";
-	cout << "name:  " << getName() << "  ";
-	cout << "cash:  " << getCash() << endl;
-	cout << "------------------------" << endl;
+    os << "Your account:  " << o.getAccountID() << "  name:  "  << o.getName() << "  cash:  " << o.getCash();
+    return os;
 }
 
 void Account::reset(void)
 {
-	cash = 0;
-	accountID = -1;
-	name = "";
+	_cash = 0;
+	_accountID = -1;
+	_name = "";
 }
 
 Account::~Account(void)
 {
 	reset();
-}
+} 
 
 void Account::swap(Account & o)
 {
-	accountID = std::move(o.accountID);
-	cash = std::move(o.cash);
-	name = std::move(o.name);
+	_accountID = std::move(o._accountID);
+	_cash = std::move(o._cash);
+	_name = std::move(o._name);
 }
 
 Account & Account::operator = (Account && rhs) noexcept
@@ -40,13 +35,13 @@ Account & Account::operator = (Account && rhs) noexcept
 
 void Account::withdraw(double amount)
 {
-	if (amount > cash)
+	if (amount > _cash)
 		 throw E("You don't have enough cash on your acccount");
 	else
-		cash -=amount;
+		_cash -=amount;
 }
 
 void Account::deposit(double amount)
 {
-		cash +=amount;
+		_cash +=amount;
 }

@@ -1,6 +1,7 @@
 #include "accountList.h"
 #include <ctime> 
 #include <algorithm>
+#include <vector>
 
 void AccountList::createAccount(void)
 {
@@ -9,118 +10,169 @@ void AccountList::createAccount(void)
     string name;
     cin >> name;
 
-    if(accountCount >= NUMBER_OF_ACCOUNTS)
-    {
-        throw E("Maximum Number of Accounts Reached");
-    }
-
-    int randNumber = rand() % MAX_ACCOUNT_ID;
-    Account createdAccount(randNumber, 0.0f, name);
-    auto result = std::find(accountList, accountList + NUMBER_OF_ACCOUNTS, createdAccount);
-
-    if (result == (accountList + NUMBER_OF_ACCOUNTS)) //if not found, iterator (pointer) points to the end.
-    {
-    	accountList[accountCount] = move(createdAccount); //RVO should work
-    }
-    else
-    {
-        while(result != (accountList + NUMBER_OF_ACCOUNTS)) //try to create a number until it's not present
-        {
-            randNumber = rand() % MAX_ACCOUNT_ID;
-            Account createdAccount(randNumber, 0.0f, name);
-            result = std::find(accountList, accountList + NUMBER_OF_ACCOUNTS, createdAccount);
-        }
-        accountList[accountCount] = move(createdAccount); //RVO should work
-    }
+    this->createAccount(name, 0.0f);
 
     cout << "Thank you, " << name << ", your account has been set up" << endl;
-    cout << "Your account ID is:" << randNumber << endl;
+    cout << "Your account ID is:" << (this->getNewAccount()).getAccountID() << endl;
     cout << "------------------------" << endl;
-    accountCount++;
 }
-
-void AccountList::createAccount(const string name, double cash)
+/*
+    creates an account with random number. Checks multiple time if the account already exists
+*/
+void AccountList::createAccount(const string& name, const double& cash)
 {
-    if(accountCount >= NUMBER_OF_ACCOUNTS)
+    if(_accountCount >= NUMBER_OF_ACCOUNTS)
     {
         throw E("Maximum Number of Accounts Reached");
     }
-
     int randNumber = rand() % MAX_ACCOUNT_ID;
     Account createdAccount(randNumber, cash, name);
-    auto result = std::find(accountList, accountList + NUMBER_OF_ACCOUNTS, createdAccount);
-
-    if (result == (accountList + NUMBER_OF_ACCOUNTS)) //if not found, iterator (pointer) points to the end.
+    auto result = std::find(_accountList, _accountList + NUMBER_OF_ACCOUNTS, createdAccount);
+    //Check if that ID already exists
+    if (result == (_accountList + NUMBER_OF_ACCOUNTS)) //if not found, iterator (pointer) points to the end.
     {
-        accountList[accountCount] = move(createdAccount); //RVO should work
+        _accountList[_accountCount] = move(createdAccount); 
     }
     else
     {
-        while(result != (accountList + NUMBER_OF_ACCOUNTS)) //try to create a number until it's not present
+        while(result != (_accountList + NUMBER_OF_ACCOUNTS)) //try to create a number until it's not present
         {
             randNumber = rand() % MAX_ACCOUNT_ID;
             Account createdAccount(randNumber, 0.0f, name);
-            result = std::find(accountList, accountList + NUMBER_OF_ACCOUNTS, createdAccount);
+            result = std::find(_accountList, _accountList + NUMBER_OF_ACCOUNTS, createdAccount);
         }
-        accountList[accountCount] = move(createdAccount); //RVO should work
+        _accountList[_accountCount] = move(createdAccount);
     }
-    accountCount++;
+    _loggedIndex = _accountCount;
+    _accountCount++;
 }
-//only searches for 1 instance of name, cannot handle duplicates
-Account AccountList::findAccountID(const string name) 
+
+Account AccountList::getAccountbyName(const string& owner)
 {
-    for (auto o : accountList)
+    Account account;
+    vector<Account> v_account;
+    vector<int> v_index;
+    int count = 0;
+
+    for (int i = 0; i < NUMBER_OF_ACCOUNTS ; i++)
     {   
-        if(o.getName() == name)
+        if(_accountList[i].getName() == owner)
         {
-            return o;
-            break;
+            v_account.push_back(_accountList[i]);
+            v_index.push_back(i);
+            ++count;
         }
     }
-    throw E("The account not found");
+    if(count == 0)
+        throw E("The account not found");
+    else if (count == 1)
+    {
+        _loggedIndex = v_index[0];
+        return v_account[0];
+    }
+    else
+        {
+            cout << "We have found " << count << " entries" << endl;
+            cout << "which you want to see " << endl;
+            int selection;
+            cin >> selection;
+            if ((selection <= count) && (selection >=0))
+            {
+                _loggedIndex = v_index[selection -1];
+                return v_account[selection -1];
+            }
+            else
+                throw E("We didn't say that many accounts exists");
+        }
+}
+
+void AccountList::tranfserMoney(const TransferInfo& o)
+{
+    int indexFrom = getIndex(o.getfromAccountID());
+    int indexTo = getIndex(o.getToAccountID());
+    double amount = o.getAmount();
+    Account fromAccount = move(_accountList[indexFrom]);;
+    Account toAccount = move(_accountList[indexTo]);;
+
+    if (fromAccount.getCash() >= amount)
+    {
+        toAccount.deposit(amount);
+        fromAccount.withdraw(amount);
+        AcccountReturnToList(toAccount, indexTo);
+        AcccountReturnToList(fromAccount, indexFrom);
+    }else
+    {
+        throw E("You do possess so much money to tranfser");
+    }
 }
 
 void AccountList::displayAllAccounts(void) 
 {
-    for (auto o : accountList)
+    for (auto o : _accountList)
     {   
         if(o.getAccountID() != -1)
-            o.accountDisplay();
+            cout << o << endl;
     }
 }
 
 Account AccountList::getNewAccount(void)
 {
 	if(this->isEmpty() == false)
-		return (accountList[accountCount - 1]);
+		return (_accountList[_accountCount - 1]);
 	else
 		throw E("The List of accounts is empty, you cannot access any accounts");
 }
 
-bool AccountList::isEmpty(void)
+Account AccountList::getAccount(const int& ID) const
 {
-	if(accountCount == 0)
+    for (auto o : _accountList)
+    {   
+        if(o.getAccountID() == ID)
+        {
+            return o;
+            break;
+        }
+    }
+    throw E("The account with given ID not found");
+}
+
+int AccountList::getIndex(const int& ID) const
+{
+   for (int i = 0; i < NUMBER_OF_ACCOUNTS ; i++)
+    {   
+        if(_accountList[i].getAccountID() == ID)
+        {
+            return i;
+            break;
+        }
+    }
+    throw E("The account with given ID not found, getIndex didn't work");
+}
+
+bool AccountList::isEmpty (void) const 
+{
+	if(_accountCount == 0)
 		return true;
 	else
 		return false;
 }
 AccountList* AccountList::getInstance()
 {
-	if(instance == NULL)
+	if(_instance == NULL)
 	{
-		instance = new AccountList;
+		_instance = new AccountList;
 	}
 	srand((unsigned) time(NULL)); // could be done in some Init function
-	return instance;
+	return _instance;
 }
 
-void AccountList::reassignLoggedAccount(Account account)
+void AccountList::reassignLoggedAccount(Account account) 
 {
-    for (int i = 0 ; i < NUMBER_OF_ACCOUNTS; ++i)
-    {
-        if (accountList[i].getAccountID() == account.getAccountID())
-        {
-             accountList[i] = move(account);
-        }
-    }
+    _accountList[_loggedIndex] = move(account);
 }
+
+void AccountList::AcccountReturnToList(Account account, int index) 
+{
+    _accountList[index] = move(account);
+}
+

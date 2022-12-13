@@ -19,6 +19,7 @@ Created by Daniel Dobinski
 #include "account.h"
 #include "exceptions.h"
 #include "accountList.h"
+#include "utest.h"
 
 using namespace std;
 
@@ -173,6 +174,7 @@ static void createAccounts(AccountList * l)
     l->createAccount("Stanilaw", 2000);
     l->createAccount("ktos", 8000);
     l->createAccount("kaczka", 10000);
+    doSomeTests();
 }
 
 
